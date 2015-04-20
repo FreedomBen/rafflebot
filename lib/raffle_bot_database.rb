@@ -1,4 +1,5 @@
 require 'sqlite3'
+require 'fileutils'
 
 class RaffleBotDatabase
   def self.sanitize_raffle_name(name)
@@ -7,6 +8,7 @@ class RaffleBotDatabase
 
   def initialize(db_file = nil)
     @db_file = db_file || File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
+    FileUtils::mkdir_p(File.dirname(@db_file))
     @db = SQLite3::Database.new(@db_file)
     @db.results_as_hash = true
     create_schema

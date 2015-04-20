@@ -13,8 +13,22 @@ class RafflebotCli < Thor
 
   desc "new <rafflename>", "Create a new raffle"
   def new(rafflename)
-    return unless valid_raffle(rafflename)
     db.create_raffle(rafflename)
+    if db.raffles.include?(rafflename)
+      puts "Created new raffle '#{rafflename}'"
+    else
+      puts "Hmm, looks like creation of raffle '#{rafflename} failed :disappointed:"
+    end
+  end
+
+  desc "settings <rafflename> <setting-name>", "Print out settings and their values for <rafflename>"
+  def setting(rafflename, setting_name)
+    #TODO
+    return unless valid_raffle(rafflename)
+    puts "Raffle: #{rafflename}"
+    db.options(rafflename).each do |key, val|
+      puts "    #{key}: #{val}"
+    end
   end
 
   desc "settings <rafflename>", "Print out settings and their values for <rafflename>"
@@ -30,6 +44,11 @@ class RafflebotCli < Thor
   def set_setting(rafflename, option, value)
     return unless valid_raffle(rafflename)
     db.set_option(rafflename, option, value)
+    if db.option(rafflename, option) == value
+      puts "Success!  Changed '#{option}' to '#{value}' for raffle '#{rafflename}'"
+    else
+      puts "Hmm, looks like setting of '#{option}' to '#{value}' for raffle '#{rafflename}' failed :disappointed:"
+    end
   end
 
   desc "winners <rafflename>", "Display list of previous winners of <rafflename>"
