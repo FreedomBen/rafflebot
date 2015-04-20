@@ -1,1 +1,2 @@
 bots/slackbot-frd.log
+lib/db/*.sqlite*

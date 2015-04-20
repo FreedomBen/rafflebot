@@ -1,8 +1,12 @@
 require 'sqlite3'
 
 class RaffleBotDatabase
-  def initialize
-    @db_file = File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
+  def self.sanitize_raffle_name(name)
+    name.gsub(/[^a-zA-Z0-9_]/, '')
+  end
+
+  def initialize(db_file = nil)
+    @db_file = db_file || File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
     @db = SQLite3::Database.new(@db_file)
     @db.results_as_hash = true
     create_schema
@@ -26,7 +30,8 @@ class RaffleBotDatabase
   end
 
   def create_raffle(name, allow_dup_winners = false, channel_pool = 'none')
-    @db.execute("INSERT INTO raffles (name, allow_dup_winners, channel_pool) VALUES (?, ?, ?)", [name, (allow_dup_winners ? 1 : 0), channel_pool])
+    raffle = RaffleBotDatabase.sanitize_raffle_name(name)
+    @db.execute("INSERT INTO raffles (name, allow_dup_winners, channel_pool) VALUES (?, ?, ?)", [raffle, (allow_dup_winners ? 1 : 0), channel_pool])
   end
 
   def raffles
@@ -34,11 +39,13 @@ class RaffleBotDatabase
   end
 
   def raffle_id(name)
-    @db.execute("SELECT raffles.rowid FROM raffles WHERE name = ?", [name]).first[0]
+    raffle = RaffleBotDatabase.sanitize_raffle_name(name)
+    @db.execute("SELECT raffles.rowid FROM raffles WHERE name = ?", [raffle]).first[0]
   end
 
   def options(raffle)
-    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool FROM raffles WHERE raffles.name = ? LIMIT 1", [raffle]).map do |val|
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool FROM raffles WHERE raffles.name = ? LIMIT 1", [rafname]).map do |val|
       {
         "allow_dup_winners" => val["allow_dup_winners"] != 0,
         "channel_pool"      => val["channel_pool"]
@@ -47,46 +54,54 @@ class RaffleBotDatabase
   end
 
   def set_option(raffle, option, value)
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     return nil unless %w[allow_dup_winners channel_pool].include?(option)
     value = value ? 1 : 0 if option == 'allow_dup_winners'
-    @db.execute("UPDATE raffles SET #{option} = ? WHERE raffles.name = ?", [value, raffle])
+    @db.execute("UPDATE raffles SET #{option} = ? WHERE raffles.name = ?", [value, rafname])
   end
 
   def winner_num(raffle, name)
-    return nil unless winner?(raffle, name)
-    @db.execute("SELECT winners.number FROM winners WHERE #{where_raffle_is(raffle)} AND name = ?", [name]).first[0]
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    return nil unless winner?(rafname, name)
+    @db.execute("SELECT winners.number FROM winners WHERE #{where_raffle_is(rafname)} AND name = ?", [name]).first[0]
   end
 
   def num_winners(raffle)
-    @db.execute("SELECT COUNT(*) FROM winners WHERE #{where_raffle_is(raffle)}").first[0]
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    @db.execute("SELECT COUNT(*) FROM winners WHERE #{where_raffle_is(rafname)}").first[0]
   end
 
   def winner?(raffle, name)
-    !@db.execute("SELECT 1 FROM winners WHERE #{where_raffle_is(raffle)} AND name = ? LIMIT 1", [name]).empty?
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    !@db.execute("SELECT 1 FROM winners WHERE #{where_raffle_is(rafname)} AND name = ? LIMIT 1", [name]).empty?
   end
 
   def add_winner(raffle, name, number = nil)
-    number = num_winners(raffle) + 1 unless number
-    @db.execute("INSERT INTO winners (number, name, raffle_id) VALUES (?, ?, ?)", [number, name, raffle_id(raffle)])
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    number = num_winners(rafname) + 1 unless number
+    @db.execute("INSERT INTO winners (number, name, raffle_id) VALUES (?, ?, ?)", [number, name, raffle_id(rafname)])
   end
 
   def winners(raffle)
-    @db.execute("SELECT winners.name FROM winners WHERE #{where_raffle_is(raffle)}").map{ |winner| winner["name"] }
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    @db.execute("SELECT winners.name FROM winners WHERE #{where_raffle_is(rafname)}").map{ |winner| winner["name"] }
   end
 
   def winners_with_number(raffle)
-    @db.execute("SELECT winners.number, winners.name FROM winners WHERE #{where_raffle_is(raffle)}").map do |winner|
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    @db.execute("SELECT winners.number, winners.name FROM winners WHERE #{where_raffle_is(rafname)}").map do |winner|
       { name: winner['name'], number: winner['number'] }
     end
   end
 
   def clear(raffle)
-    @db.execute("DELETE FROM winners WHERE #{where_raffle_is(raffle)}")
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    @db.execute("DELETE FROM winners WHERE #{where_raffle_is(rafname)}")
   end
 
   private
   def where_raffle_is(name)
-    raffle = name.gsub(/[^a-zA-Z0-9]/, '')
+    raffle = RaffleBotDatabase.sanitize_raffle_name(name)
     "winners.raffle_id = #{raffle_id(raffle)}"
   end
 end
