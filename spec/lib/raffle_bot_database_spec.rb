@@ -17,9 +17,11 @@ RSpec.describe RaffleBotDatabase do
     it "supports raffle creation and reading" do
       expect{db.create_raffle(testraffle)}.to change{db.raffles}.from([]).to([testraffle])
     end
-    
+
     it "supports reading and writing options" do
       db.create_raffle(testraffle)
+      expect{db.set_option(testraffle, 'allow_dup_winners', true)}.to change{db.get_option(testraffle, 'allow_dup_winners')}.from(false).to(true)
+      expect{db.set_option(testraffle, 'channel_pool', 'bps_test_graveyard')}.to change{db.get_option(testraffle, 'channel_pool')}.from('none').to('bps_test_graveyard')
     end
 
     it "suports winner creation and reading" do

@@ -1,10 +1,5 @@
-
-RSpec.describe RafflebotCli do
+RSpec.describe "RafflebotCli" do
   context "commands" do
-    def new_raffle(name)
-
-    end
-
     it "supports list" do
 
     end

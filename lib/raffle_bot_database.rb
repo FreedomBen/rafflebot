@@ -6,6 +6,17 @@ class RaffleBotDatabase
     name.gsub(/[^a-zA-Z0-9_]/, '')
   end
 
+  def self.allowed_options
+    %w[
+      allow_dup_winners
+      channel_pool
+    ]
+  end
+
+  def self.allowed_option?(name)
+    allowed_options.include?(name)
+  end
+
   def initialize(db_file = nil)
     @db_file = db_file || File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
     FileUtils::mkdir_p(File.dirname(@db_file))
@@ -45,6 +56,14 @@ class RaffleBotDatabase
     @db.execute("SELECT raffles.rowid FROM raffles WHERE name = ?", [raffle]).first[0]
   end
 
+  def get_option(raffle, option)
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    return nil unless RaffleBotDatabase.allowed_option?(option)
+    retval = @db.execute("SELECT raffles.#{option} FROM raffles WHERE raffles.name = ?", [rafname]).first[option]
+    return retval != 0 if option == "allow_dup_winners"
+    retval
+  end
+
   def options(raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool FROM raffles WHERE raffles.name = ? LIMIT 1", [rafname]).map do |val|
@@ -57,7 +76,7 @@ class RaffleBotDatabase
 
   def set_option(raffle, option, value)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
-    return nil unless %w[allow_dup_winners channel_pool].include?(option)
+    return nil unless RaffleBotDatabase.allowed_option?(option)
     value = value ? 1 : 0 if option == 'allow_dup_winners'
     @db.execute("UPDATE raffles SET #{option} = ? WHERE raffles.name = ?", [value, rafname])
   end

@@ -21,13 +21,11 @@ class RafflebotCli < Thor
     end
   end
 
-  desc "settings <rafflename> <setting-name>", "Print out settings and their values for <rafflename>"
+  desc "settings <rafflename> <setting-name>", "Print out value of <setting-name> for <rafflename>"
   def setting(rafflename, setting_name)
-    #TODO
     return unless valid_raffle(rafflename)
-    puts "Raffle: #{rafflename}"
     db.options(rafflename).each do |key, val|
-      puts "    #{key}: #{val}"
+      puts "#{val}" if key == setting_name
     end
   end
 
@@ -40,14 +38,14 @@ class RafflebotCli < Thor
     end
   end
 
-  desc "set_setting <rafflename> <option> <value>", "Set the <value> of <option> for <rafflename>"
-  def set_setting(rafflename, option, value)
+  desc "set <rafflename> <setting> <value>", "Set the <value> of <setting> for <rafflename>"
+  def set(rafflename, setting, value)
     return unless valid_raffle(rafflename)
-    db.set_option(rafflename, option, value)
-    if db.option(rafflename, option) == value
-      puts "Success!  Changed '#{option}' to '#{value}' for raffle '#{rafflename}'"
+    db.set_option(rafflename, setting, value)
+    if db.get_option(rafflename, setting) == value
+      puts "Success!  Changed '#{setting}' to '#{value}' for raffle '#{rafflename}'"
     else
-      puts "Hmm, looks like setting of '#{option}' to '#{value}' for raffle '#{rafflename}' failed :disappointed:"
+      puts "Hmm, looks like setting of '#{setting}' to '#{value}' for raffle '#{rafflename}' failed :disappointed:"
     end
   end
 
