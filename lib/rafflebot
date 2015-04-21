@@ -15,13 +15,13 @@ class RafflebotCli < Thor
   def new(rafflename)
     db.create_raffle(rafflename)
     if db.raffles.include?(rafflename)
-      puts "Created new raffle '#{rafflename}'"
+      puts "Created new raffle `#{rafflename}`"
     else
-      puts "Hmm, looks like creation of raffle '#{rafflename} failed :disappointed:"
+      puts "Hmm, looks like creation of raffle `#{rafflename}` failed :disappointed:"
     end
   end
 
-  desc "settings <rafflename> <setting-name>", "Print out value of <setting-name> for <rafflename>"
+  desc "setting <rafflename> <setting-name>", "Print out value of <setting-name> for <rafflename>"
   def setting(rafflename, setting_name)
     return unless valid_raffle(rafflename)
     db.options(rafflename).each do |key, val|
@@ -32,20 +32,24 @@ class RafflebotCli < Thor
   desc "settings <rafflename>", "Print out settings and their values for <rafflename>"
   def settings(rafflename)
     return unless valid_raffle(rafflename)
-    puts "Raffle: #{rafflename}"
+    puts "Raffle: #{rafflename}\n```"
     db.options(rafflename).each do |key, val|
       puts "    #{key}: #{val}"
     end
+    puts "```"
   end
 
   desc "set <rafflename> <setting> <value>", "Set the <value> of <setting> for <rafflename>"
   def set(rafflename, setting, value)
     return unless valid_raffle(rafflename)
-    db.set_option(rafflename, setting, value)
+    newval = value.dup
+    newval = "0" if value.downcase == 'false'
+    newval = "1" if value.downcase == 'true'
+    db.set_option(rafflename, setting, newval)
     if db.get_option(rafflename, setting) == value
-      puts "Success!  Changed '#{setting}' to '#{value}' for raffle '#{rafflename}'"
+      puts "Success!  Changed `#{setting}` to `#{value}` for raffle `#{rafflename}`"
     else
-      puts "Hmm, looks like setting of '#{setting}' to '#{value}' for raffle '#{rafflename}' failed :disappointed:"
+      puts "Hmm, it looks like the setting of `#{setting}` to `#{value}` for raffle `#{rafflename}` failed :disappointed:"
     end
   end
 
