@@ -2,13 +2,14 @@
 
 require 'thor'
 require 'securerandom'
+require 'byebug'
 
 require_relative 'raffle_bot_database'
 
 class RafflebotCli < Thor
   desc "list", "List all raffles"
   def list
-    puts "Raffles: #{db.raffles.join("\n")}"
+    puts "Raffles:\n``` - #{db.raffles.join("\n - ")}```"
   end
 
   desc "new <rafflename>", "Create a new raffle"
@@ -43,10 +44,10 @@ class RafflebotCli < Thor
   def set(rafflename, setting, value)
     return unless valid_raffle(rafflename)
     newval = value.dup
-    newval = "0" if value.downcase == 'false'
-    newval = "1" if value.downcase == 'true'
+    newval = false if value.downcase == 'false'
+    newval = true  if value.downcase == 'true'
     db.set_option(rafflename, setting, newval)
-    if db.get_option(rafflename, setting) == value
+    if db.get_option(rafflename, setting) == newval
       puts "Success!  Changed `#{setting}` to `#{value}` for raffle `#{rafflename}`"
     else
       puts "Hmm, it looks like the setting of `#{setting}` to `#{value}` for raffle `#{rafflename}` failed :disappointed:"
@@ -65,9 +66,19 @@ class RafflebotCli < Thor
   desc "pick_winner <rafflename>", "Draw a name for a new raffle winner for <rafflename>"
   def pick_winner(rafflename, *possible_users)
     return unless valid_raffle(rafflename)
-    winner = possible_users[SecureRandom.random_number(possible_users.length)]
-    db.add_winner(rafflename, winner)
-    puts "New winner is #{winner}!"
+    winner = if db.get_option(rafflename, 'allow_dup_winners')
+               possible_users[SecureRandom.random_number(possible_users.length)]
+             else
+               pos_users = possible_users.dup
+               db.winners(rafflename).each { |w| pos_users.delete(w) }
+               pos_users[SecureRandom.random_number(pos_users.length)]
+             end
+    if winner
+      db.add_winner(rafflename, winner)
+      puts "New winner is #{winner}!"
+    else
+      puts "Every user in the channel has already won!"
+    end
   end
 
   private
