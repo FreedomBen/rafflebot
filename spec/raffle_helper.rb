@@ -6,7 +6,7 @@ module RaffleHelper
   end
 
   def self.raffles
-    %w[one two three four five six seven]
+    %w[one two three four five six seven].map{ |i| "raffle_#{i}" }
   end
 
   def self.owner
@@ -16,8 +16,8 @@ module RaffleHelper
   def self.db_with_data
     db = RaffleBotDatabase.new(`mktemp -u`.chomp)
     raffles.each_with_index do |raffle, i|
-      db.create_raffle(owner, raffle)
-      db.set_option(owner, raffle, true, "slc") if i % 3
+      db.create_raffle(raffle, owner)
+      db.set_option(owner, raffle, 'channel_pool', "slc") if i % 3
     end
     db.raffles.each do |raffle|
       winners.each do |name|

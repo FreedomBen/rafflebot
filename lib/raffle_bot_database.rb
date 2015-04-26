@@ -71,22 +71,23 @@ class RaffleBotDatabase
 
   def options(raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
-    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool, raffles.restrict_ops_to_owner, raffles.owner"  \
+    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool, raffles.restrict_ops_to_owner, raffles.owner "  \
                 "FROM raffles WHERE raffles.name = ? LIMIT 1", [rafname]).map do |val|
       {
         "owner"                 => val["owner"],
         "allow_dup_winners"     => val["allow_dup_winners"] != 0,
         "channel_pool"          => val["channel_pool"],
-        "restrict_ops_to_owner" => val["restrict_ops_to_owner"]
+        "restrict_ops_to_owner" => val["restrict_ops_to_owner"] != 0
       }
     end.first
   end
 
   def set_option(user, raffle, option, value)
+    # debugger if option == 'channel_pool'
     return nil unless authorized?(user, raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     return nil unless RaffleBotDatabase.allowed_option?(option)
-    value = value ? 1 : 0 %w[allow_dup_winners restrict_ops_to_owner].include?(option)
+    value = value ? 1 : 0 if %w[allow_dup_winners restrict_ops_to_owner].include?(option)
     @db.execute("UPDATE raffles SET #{option} = ? WHERE raffles.name = ?", [value, rafname])
   end
 

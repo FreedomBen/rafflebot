@@ -9,7 +9,7 @@ RSpec.describe RaffleBotDatabase do
   let(:dan) { "dan" }
   let(:owner) { "celita" }
   let(:not_owner) { "angela" }
-  let(:channel_pool)          { "crazy_channel" }
+  let(:channel_pool) { "crazy_channel" }
 
   context "ops" do
     it "creates file during init" do
@@ -30,7 +30,7 @@ RSpec.describe RaffleBotDatabase do
     end
 
     it "suports winner creation and reading" do
-      db.create_raffle(owner, testraffle)
+      db.create_raffle(testraffle, owner)
       expect(db.raffles).to include(testraffle)
       expect(db.winner?(testraffle, dan)).to be_falsey
       expect(db.num_winners(testraffle)).to be_zero
@@ -43,7 +43,7 @@ RSpec.describe RaffleBotDatabase do
     end
 
     it "supports clearing the winners from a raffle" do
-      expect{db_with_data.clear(RaffleHelper.raffles.first)}.to change{db_with_data.winners(RaffleHelper.raffles.first)}.from(RaffleHelper.winners).to([])
+      expect{db_with_data.clear(owner, RaffleHelper.raffles.first)}.to change{db_with_data.winners(RaffleHelper.raffles.first)}.from(RaffleHelper.winners).to([])
     end
   end
 
@@ -64,7 +64,7 @@ RSpec.describe RaffleBotDatabase do
 
     it "allows writing options when not the owner when the option is set" do
       expect{db.set_option(owner, testraffle, 'restrict_ops_to_owner', false)}.to change{db.get_option(testraffle, 'restrict_ops_to_owner')}.to(false)
-      expect{db.set_option(not_owner, 'allow_dup_winners', false)}.to change{db.get_option(testraffle, 'allow_dup_winners')}.from(false).to(true)
+      expect{db.set_option(not_owner, testraffle, 'allow_dup_winners', true)}.to change{db.get_option(testraffle, 'allow_dup_winners')}.from(false).to(true)
     end
 
     it "disallows writing options when not the owner" do
