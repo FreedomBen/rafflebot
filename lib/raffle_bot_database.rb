@@ -8,8 +8,10 @@ class RaffleBotDatabase
 
   def self.allowed_options
     %w[
+      owner
       allow_dup_winners
       channel_pool
+      restrict_ops_to_owner
     ]
   end
 
@@ -30,7 +32,9 @@ class RaffleBotDatabase
       CREATE TABLE IF NOT EXISTS raffles (
         name TEXT UNIQUE,
         allow_dup_winners INTEGER,
-        channel_pool TEXT
+        channel_pool TEXT,
+        owner TEXT,
+        restrict_ops_to_owner, INTEGER
       )
     SQL
     @db.execute <<-SQL
@@ -38,13 +42,14 @@ class RaffleBotDatabase
         raffle_id INTEGER,
         number INTEGER,
         name TEXT
-      );
+      )
     SQL
   end
 
-  def create_raffle(name, allow_dup_winners = false, channel_pool = 'none')
+  def create_raffle(name, owner, allow_dup_winners = false, channel_pool = 'none', restrict_ops_to_owner = true)
     raffle = RaffleBotDatabase.sanitize_raffle_name(name)
-    @db.execute("INSERT INTO raffles (name, allow_dup_winners, channel_pool) VALUES (?, ?, ?)", [raffle, (allow_dup_winners ? 1 : 0), channel_pool])
+    @db.execute("INSERT INTO raffles (name, owner, allow_dup_winners, channel_pool, restrict_ops_to_owner) VALUES (?, ?, ?, ?, ?)",
+                [raffle, owner, (allow_dup_winners ? 1 : 0), channel_pool, (restrict_ops_to_owner ? 1 : 0)])
   end
 
   def raffles
@@ -60,24 +65,28 @@ class RaffleBotDatabase
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     return nil unless RaffleBotDatabase.allowed_option?(option)
     retval = @db.execute("SELECT raffles.#{option} FROM raffles WHERE raffles.name = ?", [rafname]).first[option]
-    return retval != 0 if option == "allow_dup_winners"
+    return retval != 0 if %w[allow_dup_winners restrict_ops_to_owner].include?(option)
     retval
   end
 
   def options(raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
-    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool FROM raffles WHERE raffles.name = ? LIMIT 1", [rafname]).map do |val|
+    @db.execute("SELECT raffles.allow_dup_winners, raffles.channel_pool, raffles.restrict_ops_to_owner, raffles.owner"  \
+                "FROM raffles WHERE raffles.name = ? LIMIT 1", [rafname]).map do |val|
       {
-        "allow_dup_winners" => val["allow_dup_winners"] != 0,
-        "channel_pool"      => val["channel_pool"]
+        "owner"                 => val["owner"],
+        "allow_dup_winners"     => val["allow_dup_winners"] != 0,
+        "channel_pool"          => val["channel_pool"],
+        "restrict_ops_to_owner" => val["restrict_ops_to_owner"]
       }
     end.first
   end
 
-  def set_option(raffle, option, value)
+  def set_option(user, raffle, option, value)
+    return nil unless authorized?(user, raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     return nil unless RaffleBotDatabase.allowed_option?(option)
-    value = value ? 1 : 0 if option == 'allow_dup_winners'
+    value = value ? 1 : 0 %w[allow_dup_winners restrict_ops_to_owner].include?(option)
     @db.execute("UPDATE raffles SET #{option} = ? WHERE raffles.name = ?", [value, rafname])
   end
 
@@ -97,7 +106,8 @@ class RaffleBotDatabase
     !@db.execute("SELECT 1 FROM winners WHERE #{where_raffle_is(rafname)} AND name = ? LIMIT 1", [name]).empty?
   end
 
-  def add_winner(raffle, name, number = nil)
+  def add_winner(user, raffle, name, number = nil)
+    return nil unless authorized?(user, raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     number = num_winners(rafname) + 1 unless number
     @db.execute("INSERT INTO winners (number, name, raffle_id) VALUES (?, ?, ?)", [number, name, raffle_id(rafname)])
@@ -115,7 +125,8 @@ class RaffleBotDatabase
     end
   end
 
-  def clear(raffle)
+  def clear(user, raffle)
+    return nil unless authorized?(user, raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     @db.execute("DELETE FROM winners WHERE #{where_raffle_is(rafname)}")
   end
@@ -124,5 +135,11 @@ class RaffleBotDatabase
   def where_raffle_is(name)
     raffle = RaffleBotDatabase.sanitize_raffle_name(name)
     "winners.raffle_id = #{raffle_id(raffle)}"
+  end
+
+  private
+  def authorized?(user, raffle)
+    opts = options(raffle)
+    opts['owner'] == user || opts['restrict_ops_to_owner'] == false
   end
 end
