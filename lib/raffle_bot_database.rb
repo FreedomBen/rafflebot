@@ -34,7 +34,7 @@ class RaffleBotDatabase
         allow_dup_winners INTEGER,
         channel_pool TEXT,
         owner TEXT,
-        restrict_ops_to_owner, INTEGER
+        restrict_ops_to_owner INTEGER
       )
     SQL
     @db.execute <<-SQL

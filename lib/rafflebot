@@ -2,7 +2,6 @@
 
 require 'thor'
 require 'securerandom'
-require 'byebug'
 
 require_relative 'raffle_bot_database'
 

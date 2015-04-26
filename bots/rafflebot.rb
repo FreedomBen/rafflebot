@@ -45,7 +45,7 @@ class RaffleBot < SlackbotFrd::Bot
               else
                 slack_connection.users_in_channel(channel_pool)
               end
-      send_msg(slack_connection, channel, `#{@rafflebot_cli} pick_winner --user #{user} #{raffle} #{users.join(" ")}`)
+      send_msg(slack_connection, channel, `#{@rafflebot_cli} pick_winner #{raffle} #{users.join(" ")} --user="#{user}"`)
     else
       straight_pass(slack_connection, user, channel, command)
     end
@@ -80,7 +80,7 @@ class RaffleBot < SlackbotFrd::Bot
     pr = if command =~ /^help/
            parse_response("```#{parse_response(`#{@rafflebot_cli} #{command}`)}```".gsub(/(Options|\[\-\-user).*\n/i, ''))
          else
-           parse_response(`#{@rafflebot_cli} --user #{user} #{command}`)
+           parse_response(`#{@rafflebot_cli} #{command} --user="#{user}"`)
          end
     send_msg(sc, channel, pr)
   end
