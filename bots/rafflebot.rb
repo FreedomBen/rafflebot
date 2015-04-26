@@ -27,7 +27,7 @@ class RaffleBot < SlackbotFrd::Bot
     if message =~ regex_with_rafname
       handle_response_with_rafname(slack_connection, user, channel, command)
     elsif message =~ regex_no_rafname
-      straight_pass(slack_connection, channel, command)
+      straight_pass(slack_connection, user, channel, command)
     else
       send_bad_command_msg(slack_connection, channel)
     end
@@ -41,16 +41,13 @@ class RaffleBot < SlackbotFrd::Bot
       channel_pool = `#{@rafflebot_cli} setting #{raffle} channel_pool`.chomp
       channel_pool.gsub(/#/, '') # just in case
       users = if channel_pool.empty? || channel_pool =~ /any|all|none/
-                SlackbotFrd::Log.warn("No channel set!: #{channel_pool}")
                 slack_connection.users_in_channel(channel)
               else
-                SlackbotFrd::Log.warn("channel pool: #{channel_pool}")
                 slack_connection.users_in_channel(channel_pool)
               end
-      SlackbotFrd::Log.warn("Out of it")
-      send_msg(slack_connection, channel, `#{@rafflebot_cli} pick_winner #{raffle} #{users.join(" ")}`)
+      send_msg(slack_connection, channel, `#{@rafflebot_cli} pick_winner --user #{user} #{raffle} #{users.join(" ")}`)
     else
-      straight_pass(slack_connection, channel, command)
+      straight_pass(slack_connection, user, channel, command)
     end
   end
 
@@ -79,11 +76,11 @@ class RaffleBot < SlackbotFrd::Bot
   end
 
   private
-  def straight_pass(sc, channel, command)
+  def straight_pass(sc, user, channel, command)
     pr = if command =~ /^help/
-           parse_response("```#{parse_response(`#{@rafflebot_cli} #{command}`)}```")
+           parse_response("```#{parse_response(`#{@rafflebot_cli} #{command}`)}```".gsub(/(Options|\[\-\-user).*\n/i, ''))
          else
-           parse_response(`#{@rafflebot_cli} #{command}`)
+           parse_response(`#{@rafflebot_cli} --user #{user} #{command}`)
          end
     send_msg(sc, channel, pr)
   end

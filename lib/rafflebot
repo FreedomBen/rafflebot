@@ -7,6 +7,8 @@ require 'byebug'
 require_relative 'raffle_bot_database'
 
 class RafflebotCli < Thor
+  class_option :user, type: :string
+
   desc "list", "List all raffles"
   def list
     puts "Raffles:\n``` - #{db.raffles.join("\n - ")}```"
@@ -14,7 +16,7 @@ class RafflebotCli < Thor
 
   desc "new <rafflename>", "Create a new raffle"
   def new(rafflename)
-    db.create_raffle(rafflename)
+    db.create_raffle(rafflename, options[:user])
     if db.raffles.include?(rafflename)
       puts "Created new raffle `#{rafflename}`"
     else
@@ -46,7 +48,7 @@ class RafflebotCli < Thor
     newval = value.dup
     newval = false if value.downcase == 'false'
     newval = true  if value.downcase == 'true'
-    db.set_option(rafflename, setting, newval)
+    db.set_option(opts[:user], rafflename, setting, newval)
     if db.get_option(rafflename, setting) == newval
       puts "Success!  Changed `#{setting}` to `#{value}` for raffle `#{rafflename}`"
     else
@@ -74,8 +76,11 @@ class RafflebotCli < Thor
                pos_users[SecureRandom.random_number(pos_users.length)]
              end
     if winner
-      db.add_winner(rafflename, winner)
-      puts "New winner is #{winner}!"
+      if db.add_winner(options[:user], rafflename, winner)
+        puts "New winner is #{winner}!"
+      else
+        puts "Selection of a winner failed.  Are you authorized?"
+      end
     else
       puts "Every user in the channel has already won!"
     end

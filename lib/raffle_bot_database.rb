@@ -83,7 +83,6 @@ class RaffleBotDatabase
   end
 
   def set_option(user, raffle, option, value)
-    # debugger if option == 'channel_pool'
     return nil unless authorized?(user, raffle)
     rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
     return nil unless RaffleBotDatabase.allowed_option?(option)
@@ -140,6 +139,7 @@ class RaffleBotDatabase
 
   private
   def authorized?(user, raffle)
+    return false unless user
     opts = options(raffle)
     opts['owner'] == user || opts['restrict_ops_to_owner'] == false
   end
