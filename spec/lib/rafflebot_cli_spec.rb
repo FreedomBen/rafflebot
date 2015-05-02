@@ -1,11 +1,21 @@
 require 'byebug'
 
+RAFFLEBOT_DATABASE_FILE = `mktemp -u`.chomp
+
 RSpec.describe "RafflebotCli" do
 
   let(:rafflebot_cli) { File.expand_path("#{__FILE__}/../../../lib/rafflebot") }
   let(:rafname) { "test_raffle" }
   let(:user) { "celita" }
   let(:notuser) { "not_a_user" }
+
+  before :all do
+    File.write("rafflebot_database_file.txt", `mktemp -u`.chomp)
+  end
+
+  after :all do
+    File.delete("rafflebot_database_file.txt")
+  end
 
   def rafbot_new(name)
     `#{rafflebot_cli} new #{name} --user="#{user}"`
@@ -37,7 +47,7 @@ RSpec.describe "RafflebotCli" do
 
   context "commands" do
     it "supports list" do
-      debugger
+      rafbot_list
     end
 
     it "supports new" do

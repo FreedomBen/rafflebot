@@ -19,8 +19,18 @@ class RaffleBotDatabase
     allowed_options.include?(name)
   end
 
+  def self.default_db_file
+    # This is a hack to let the unit test have its own db
+    rdbf = "rafflebot_database_file.txt"
+    if File.exists?(rdbf)
+      return File.read(rdbf)
+    else
+      return File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
+    end
+  end
+
   def initialize(db_file = nil)
-    @db_file = db_file || File.expand_path("#{__FILE__}/../db/rafflebot.sqlite3")
+    @db_file = db_file || RaffleBotDatabase.default_db_file
     FileUtils::mkdir_p(File.dirname(@db_file))
     @db = SQLite3::Database.new(@db_file)
     @db.results_as_hash = true

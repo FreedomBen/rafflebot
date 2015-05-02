@@ -13,8 +13,12 @@ module RaffleHelper
     "celita"
   end
 
+  def self.db
+    RaffleBotDatabase.new(`mktemp -u`.chomp)
+  end
+
   def self.db_with_data
-    db = RaffleBotDatabase.new(`mktemp -u`.chomp)
+    db = RaffleBotDatabase.db
     raffles.each_with_index do |raffle, i|
       db.create_raffle(raffle, owner)
       db.set_option(owner, raffle, 'channel_pool', "slc") if i % 3
