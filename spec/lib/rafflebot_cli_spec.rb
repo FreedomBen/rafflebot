@@ -57,6 +57,14 @@ RSpec.describe "RafflebotCli" do
     `#{rafflebot_cli} insert_winner #{name} #{winner} --user="#{user}"`.chomp
   end
 
+  def rafbot_clear(name)
+    `#{rafflebot_cli} clear #{name} --user="#{user}"`.chomp
+  end
+
+  def rafbot_delete(name)
+    `#{rafflebot_cli} delete #{name} --user="#{user}"`.chomp
+  end
+
   def list_to_rafname_array
     retval = rafbot_list.gsub(/```\s*/, '').split
     2.times { retval.shift }
@@ -127,6 +135,27 @@ RSpec.describe "RafflebotCli" do
         expect{ rafbot_insert_winner(rafname, winner) }.to change{winners_to_array(rafname).count}.by(1)
       end
       expect(winners_to_array(rafname)).to eq(winners)
+    end
+
+    it "supports deleting raffles" do
+      raffles = %w[one two three four five].sort
+      raffles.each do |raffle|
+        rafbot_new(raffle)
+      end
+      raffles.each do |raffle|
+        before = raffles.dup
+        after = raffles.tap{|r| r.delete(raffle)}
+        expect{rafbot_delete(raffle)}.to change{list_to_rafname_array}.from(before).to(after)
+      end
+    end
+
+    it "supports clearing raffles" do
+      rafbot_new(rafname)
+      winners = %w[one two three four five]
+      winners.each do |winner|
+        rafbot_insert_winner(rafname, winner)
+      end
+      expect{rafbot_clear(rafname)}.to change{winners_to_array(rafname)}.from(winners).to([])
     end
   end
 

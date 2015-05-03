@@ -141,6 +141,13 @@ class RaffleBotDatabase
     @db.execute("DELETE FROM winners WHERE #{where_raffle_is(rafname)}")
   end
 
+  def delete(user, raffle)
+    return nil unless authorized?(user, raffle)
+    rafname = RaffleBotDatabase.sanitize_raffle_name(raffle)
+    clear(user, raffle)
+    @db.execute("DELETE FROM raffles WHERE name = '#{rafname}'")
+  end
+
   private
   def where_raffle_is(name)
     raffle = RaffleBotDatabase.sanitize_raffle_name(name)

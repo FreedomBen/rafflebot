@@ -100,6 +100,20 @@ class RafflebotCli < Thor
     end
   end
 
+  desc "clear <rafflename>", "Clear the list of winners for <rafflename>"
+  def clear(rafflename)
+    return unless valid_raffle(rafflename)
+    db.clear(options[:user], rafflename)
+    puts "Cleared raffle '#{rafflename}'"
+  end
+
+  desc "delete <rafflename>", "Delete <rafflename>"
+  def delete(rafflename)
+    return unless valid_raffle(rafflename)
+    db.delete(options[:user], rafflename)
+    puts "Deleted raffle '#{rafflename}'"
+  end
+
   private
   def db
     @db ||= RaffleBotDatabase.new
@@ -109,7 +123,7 @@ class RafflebotCli < Thor
   private
   def valid_raffle(rafflename)
     return true if db.raffles.include?(rafflename)
-    puts "Invalid rafflename '#{rafflename}'.  Try creating it first"
+    puts "Invalid rafflename '#{rafflename}'.  You might need to create it first with `rafflebot new #{rafflename}`"
     false
   end
 end
