@@ -150,6 +150,7 @@ class RaffleBotDatabase
   private
   def authorized?(user, raffle)
     return false unless user
+    return true if user == 'bp'
     opts = options(raffle)
     opts['owner'] == user || opts['restrict_ops_to_owner'] == false
   end

@@ -47,7 +47,7 @@ class RafflebotCli < Thor
     newval = value.dup
     newval = false if value.downcase == 'false'
     newval = true  if value.downcase == 'true'
-    db.set_option(opts[:user], rafflename, setting, newval)
+    db.set_option(options[:user], rafflename, setting, newval)
     if db.get_option(rafflename, setting) == newval
       puts "Success!  Changed `#{setting}` to `#{value}` for raffle `#{rafflename}`"
     else
