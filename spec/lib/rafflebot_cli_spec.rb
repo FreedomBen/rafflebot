@@ -50,7 +50,7 @@ RSpec.describe "RafflebotCli" do
   end
 
   def rafbot_pick_winner(name, users)
-    `#{rafflebot_cli} pick_winner #{name} #{users.join} --user="#{user}"`.chomp
+    `#{rafflebot_cli} pick_winner #{name} #{users.join(' ')} --user="#{user}"`.chomp
   end
 
   def list_to_rafname_array
@@ -73,6 +73,12 @@ RSpec.describe "RafflebotCli" do
       end
     end
     retval
+  end
+
+  def winners_to_array(raffle)
+    retval = rafbot_winners(raffle).split
+    2.times{ retval.shift }
+    retval.select{ |winner| true unless winner =~ /\d+:/ }
   end
 
   def check_setting_value(rafname, setting, value)
@@ -100,7 +106,13 @@ RSpec.describe "RafflebotCli" do
     end
 
     it "supports reading winners and picking winners" do
-
+      rafbot_new(rafname)
+      winners = %w[one two three four]
+      expect(winners_to_array(rafname)).to eq([])
+      winners.each do |_winner|
+        expect{ rafbot_pick_winner(rafname, winners) }.to change{winners_to_array(rafname).count}.by(1)
+      end
+      expect(winners_to_array(rafname)).to match_array(winners)
     end
   end
 
