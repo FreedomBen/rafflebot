@@ -85,6 +85,21 @@ class RafflebotCli < Thor
     end
   end
 
+  desc "insert_winner <rafflename> <winner>", "Insert <winner> as a winner of <rafflename>"
+  def insert_winner(rafflename, winner)
+    return unless valid_raffle(rafflename)
+
+    if winner
+      if db.add_winner(options[:user], rafflename, winner)
+        puts "New winner is #{winner}!"
+      else
+        puts "Could not insert winner.  Are you authorized?"
+      end
+    else
+      puts "You must specify a winner :laughing:"
+    end
+  end
+
   private
   def db
     @db ||= RaffleBotDatabase.new

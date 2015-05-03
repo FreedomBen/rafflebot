@@ -53,6 +53,10 @@ RSpec.describe "RafflebotCli" do
     `#{rafflebot_cli} pick_winner #{name} #{users.join(' ')} --user="#{user}"`.chomp
   end
 
+  def rafbot_insert_winner(name, winner)
+    `#{rafflebot_cli} insert_winner #{name} #{winner} --user="#{user}"`.chomp
+  end
+
   def list_to_rafname_array
     retval = rafbot_list.gsub(/```\s*/, '').split
     2.times { retval.shift }
@@ -113,6 +117,16 @@ RSpec.describe "RafflebotCli" do
         expect{ rafbot_pick_winner(rafname, winners) }.to change{winners_to_array(rafname).count}.by(1)
       end
       expect(winners_to_array(rafname)).to match_array(winners)
+    end
+
+    it "supports inserting pre-selected winners" do
+      rafbot_new(rafname)
+      expect(winners_to_array(rafname)).to eq([])
+      winners = %w[one two three four]
+      winners.each do |winner|
+        expect{ rafbot_insert_winner(rafname, winner) }.to change{winners_to_array(rafname).count}.by(1)
+      end
+      expect(winners_to_array(rafname)).to eq(winners)
     end
   end
 
