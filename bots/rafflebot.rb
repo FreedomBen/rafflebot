@@ -9,7 +9,7 @@ class RaffleBot < SlackbotFrd::Bot
   end
 
   def add_callbacks(slack_connection)
-    slack_connection.on_message do |user, channel, message|
+    slack_connection.on_message do |user:, channel:, message:, timestamp:|
       # Don't answer unless directed to us and it's not a bot
       if message =~ /^\s*rafflebot/i && user != :bot
         handle_response(slack_connection, user, channel, message)
@@ -66,12 +66,11 @@ class RaffleBot < SlackbotFrd::Bot
 
   private
   def send_msg(sc, channel, message)
-    sc.send_message_as_user(
-      channel,
-      message,
-      "Raffle Bot",
-      ":raphael:",
-      true
+    sc.send_message(
+      channel: channel,
+      message: message,
+      username: "Raffle Bot",
+      avatar_emoji: ":raphael:"
     )
   end
 
