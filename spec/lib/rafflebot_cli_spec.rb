@@ -157,6 +157,10 @@ RSpec.describe "RafflebotCli" do
       end
       expect{rafbot_clear(rafname)}.to change{winners_to_array(rafname)}.from(winners).to([])
     end
+
+    it "supports registering users" do
+      rafbot_new(rafname)
+    end
   end
 
   context "security" do

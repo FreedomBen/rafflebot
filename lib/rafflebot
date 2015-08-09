@@ -114,6 +114,12 @@ class RafflebotCli < Thor
     puts "Deleted raffle '#{rafflename}'"
   end
 
+  desc "register <rafflename> [user]", "Register self (or user if specified) in the specified raffle"
+  def register(rafflename, user=nil)
+    # if the user owns the raffle, they can register others.  if not, they can only register themselves
+
+  end
+
   private
   def db
     @db ||= RaffleBotDatabase.new
